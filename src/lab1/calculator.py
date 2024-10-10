@@ -1,32 +1,105 @@
+"""Модуль содержит класс Calculator для выполнения основных математических операций."""
+
+from math import sqrt
+from typing import Optional, Tuple, Union
+
+
 class Calculator:
-    def add(self, a, b):
-        return a + b
+    """
+    Калькулятор для выполнения основных арифметических операций и решения
+    квадратных уравнений.
+    """
 
-    def subtract(self, a, b):
-        return a - b
+    def add(self, num1: float, num2: float) -> float:
+        """
+        Возвращает сумму num1 и num2.
 
-    def multiply(self, a, b):
-        return a * b
+        Args:
+            num1 (float): Первое слагаемое.
+            num2 (float): Второе слагаемое.
 
-    def divide(self, a, b):
-        if b == 0:
+        Returns:
+            float: Сумма num1 и num2.
+        """
+        return num1 + num2
+
+    def subtract(self, num1: float, num2: float) -> float:
+        """
+        Возвращает разность num1 и num2.
+
+        Args:
+            num1 (float): Уменьшаемое.
+            num2 (float): Вычитаемое.
+
+        Returns:
+            float: Разность num1 и num2.
+        """
+        return num1 - num2
+
+    def multiply(self, num1: float, num2: float) -> float:
+        """
+        Возвращает произведение num1 и num2.
+
+        Args:
+            num1 (float): Первый множитель.
+            num2 (float): Второй множитель.
+
+        Returns:
+            float: Произведение num1 и num2.
+        """
+        return num1 * num2
+
+    def divide(self, num1: float, num2: float) -> float:
+        """
+        Возвращает результат деления num1 на num2.
+
+        Args:
+            num1 (float): Делимое.
+            num2 (float): Делитель.
+
+        Raises:
+            ZeroDivisionError: Если num2 равен нулю.
+
+        Returns:
+            float: Частное от деления num1 на num2.
+        """
+        if num2 == 0:
             raise ZeroDivisionError("Деление на ноль невозможно.")
-        return a / b
+        return num1 / num2
 
-    def power(self, a, n):
-        return a ** n
+    def power(self, base: float, exponent: float) -> float:
+        """
+        Возводит число base в степень exponent.
 
-    def solve_quadratic(self, a, b, c):
-        from math import sqrt
+        Args:
+            base (float): Основание степени.
+            exponent (float): Показатель степени.
 
+        Returns:
+            float: Результат возведения base в степень exponent.
+        """
+        return base ** exponent
 
-        discriminant = b**2 - 4*a*c
+    def solve_quadratic(
+        self, coef_a: float, coef_b: float, coef_c: float
+    ) -> Tuple[float, Optional[Union[float, Tuple[float, float]]]]:
+        """
+        Решает квадратное уравнение вида ax^2 + bx + c = 0.
+
+        Args:
+            coef_a (float): Коэффициент при x^2.
+            coef_b (float): Коэффициент при x.
+            coef_c (float): Свободный член.
+
+        Returns:
+            tuple: Кортеж из дискриминанта и корней уравнения.
+        """
+        discriminant = coef_b ** 2 - 4 * coef_a * coef_c
         if discriminant > 0:
-            x1 = (-b + sqrt(discriminant)) / (2*a)
-            x2 = (-b - sqrt(discriminant)) / (2*a)
-            return discriminant, (x1, x2)
-        elif discriminant == 0:
-            x = -b / (2*a)
-            return discriminant, x
-        else:
-            return discriminant, None
+            root1 = (-coef_b + sqrt(discriminant)) / (2 * coef_a)
+            root2 = (-coef_b - sqrt(discriminant)) / (2 * coef_a)
+            return discriminant, (root1, root2)
+        if discriminant == 0:
+            root = -coef_b / (2 * coef_a)
+            return discriminant, root
+        return discriminant, None
