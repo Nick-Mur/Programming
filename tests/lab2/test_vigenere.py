@@ -4,6 +4,8 @@
 
 import unittest
 from src.lab2.vigenere import encrypt_vigenere, decrypt_vigenere
+import random
+import string
 
 
 class TestVigenereCipher(unittest.TestCase):
