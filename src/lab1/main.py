@@ -1,6 +1,6 @@
 """Основной модуль для запуска калькулятора."""
 
-from lab1.calculator import Calculator
+from src.lab1.calculator import Calculator
 
 
 def input_number(prompt: str) -> float:

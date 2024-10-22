@@ -47,6 +47,15 @@ def compute_gcd(value_a: int, value_b: int) -> int:
     return value_a
 
 
+def extended_gcd(value_a, value_b):
+    if value_a == 0:
+        return value_b, 0, 1
+    gcd_value, x_coef1, y_coef1 = extended_gcd(value_b % value_a, value_a)
+    x_coef = y_coef1 - (value_b // value_a) * x_coef1
+    y_coef = x_coef1
+    return gcd_value, x_coef, y_coef
+
+
 def multiplicative_inverse(exponent: int, phi: int) -> int:
     """
     Расширенный алгоритм Евклида для нахождения мультипликативного обратного.
@@ -54,13 +63,6 @@ def multiplicative_inverse(exponent: int, phi: int) -> int:
     >>> multiplicative_inverse(7, 40)
     23
     """
-    def extended_gcd(value_a, value_b):
-        if value_a == 0:
-            return value_b, 0, 1
-        gcd_value, x_coef1, y_coef1 = extended_gcd(value_b % value_a, value_a)
-        x_coef = y_coef1 - (value_b // value_a) * x_coef1
-        y_coef = x_coef1
-        return gcd_value, x_coef, y_coef
 
     gcd_value, x_coef, _ = extended_gcd(exponent, phi)
     if gcd_value != 1:
@@ -99,7 +101,7 @@ def generate_keypair(prime_p: int, prime_q: int) -> tp.Tuple[tp.Tuple[int, int],
     exponent_d = multiplicative_inverse(exponent_e, phi)
 
     # Публичный ключ (e, n), приватный ключ (d, n)
-    return ((exponent_e, modulus_n), (exponent_d, modulus_n))
+    return (exponent_e, modulus_n), (exponent_d, modulus_n)
 
 
 def encrypt(public_key: tp.Tuple[int, int], plaintext: str) -> tp.List[int]:
@@ -130,8 +132,8 @@ def decrypt(private_key: tp.Tuple[int, int], ciphertext: tp.List[int]) -> str:
 
 if __name__ == "__main__":
     print("RSA Шифратор/Дешифратор")
-    PRIME_P = int(input("Введите простое число (например, 17, 19, 23 и т.д.): "))
-    PRIME_Q = int(input("Введите другое простое число (отличное от предыдущего): "))
+    PRIME_P = int(input("Введите простое число не меньшее 17 (например, 17, 19, 23 и т.д.): "))
+    PRIME_Q = int(input("Введите другое простое число не меньшее 17 (отличное от предыдущего): "))
     print("Генерируем ваши публичный и приватный ключи...")
     PUBLIC_KEY, PRIVATE_KEY = generate_keypair(PRIME_P, PRIME_Q)
     print("Ваш публичный ключ: ", PUBLIC_KEY, " и ваш приватный ключ: ", PRIVATE_KEY)
