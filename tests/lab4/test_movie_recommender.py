@@ -1,7 +1,7 @@
 # test_recommender.py
 
 import unittest
-from src.lab4.py_files.objects import MovieRecommender
+from src.lab4.py_files.movie_recommender import MovieRecommender
 
 
 class TestMovieRecommender(unittest.TestCase):
