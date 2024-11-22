@@ -1,0 +1,1 @@
+12345;Product1, Product2;John Doe;Country. Region. City. Street;+1-123-456-78-90;MAX

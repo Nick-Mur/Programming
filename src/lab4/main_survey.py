@@ -69,3 +69,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # python main_survey.py 18 25 35 45 60 80 100
