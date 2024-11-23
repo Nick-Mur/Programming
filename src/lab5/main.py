@@ -1,147 +1,201 @@
 import re
-from typing import List, Tuple
-
-def read_orders(file_path: str) -> List[List[str]]:
-    """
-    Читает заказы из указанного файла.
-
-    :param file_path: Путь к файлу с заказами.
-    :return: Список заказов, каждый из которых является списком атрибутов.
-    """
-    orders = []
-    with open(file_path, 'r', encoding='utf-8') as file:
-        for line in file:
-            if line.strip():
-                orders.append(line.strip().split(';'))
-    return orders
-
-def validate_order(order: List[str]) -> Tuple[bool, List[Tuple[str, str, str]]]:
-    """
-    Проверяет заказ на соответствие правилам.
-
-    :param order: Список атрибутов заказа.
-    :return: Кортеж, содержащий флаг валидности и список ошибок.
-    """
-    errors = []
-    order_number, _, _, address, phone_number, _ = order
-
-    # Проверка адреса доставки
-    if not address or len(address.strip().split('. ')) != 4:
-        error_value = address if address else "no data"
-        errors.append((order_number, '1', error_value))
-
-    # Проверка номера телефона
-    if not phone_number:
-        errors.append((order_number, '2', "no data"))
-    else:
-        pattern = r'^\+\d-\d{3}-\d{3}-\d{2}-\d{2}$'
-        if not re.match(pattern, phone_number):
-            errors.append((order_number, '2', phone_number))
-
-    return len(errors) == 0, errors
+from typing import List, Tuple, Optional
 
 
-def process_orders(orders: List[List[str]]) -> Tuple[List[List[str]], List[Tuple[str, str, str]]]:
-    """
-    Обрабатывает и проверяет все заказы.
+class Order:
+    def __init__(self, order_data: List[str]):
+        """
+        Инициализирует объект заказа на основе списка атрибутов.
 
-    :param orders: Список заказов.
-    :return: Кортеж, содержащий список валидных заказов и список ошибок.
-    """
-    valid_orders = []
-    error_list = []
+        :param order_data: Список атрибутов заказа.
+        """
+        self.order_number = order_data[0]
+        self.products = order_data[1]
+        self.customer_name = order_data[2]
+        self.address = order_data[3]
+        self.phone_number = order_data[4]
+        self.priority = order_data[5]
 
-    for order in orders:
-        is_valid, errors = validate_order(order)
-        if is_valid:
-            valid_orders.append(order)
+        self.errors: List[Tuple[str, str]] = []  # Список ошибок для данного заказа
+
+    def validate(self) -> None:
+        """
+        Проверяет заказ на соответствие правилам и заполняет список ошибок.
+        """
+        # Проверка адреса доставки
+        if not self.address or len(self.address.strip().split('. ')) != 4:
+            error_value = self.address if self.address else "no data"
+            self.errors.append(('1', error_value))
+
+        # Проверка номера телефона
+        if not self.phone_number:
+            self.errors.append(('2', "no data"))
         else:
-            error_list.extend(errors)
+            pattern = r'^\+\d-\d{3}-\d{3}-\d{2}-\d{2}$'
+            if not re.match(pattern, self.phone_number):
+                self.errors.append(('2', self.phone_number))
 
-    return valid_orders, error_list
+    def is_valid(self) -> bool:
+        """
+        Проверяет, является ли заказ валидным.
 
-def write_non_valid_orders(errors: List[Tuple[str, str, str]], file_path: str) -> None:
-    """
-    Записывает невалидные заказы в файл.
+        :return: True, если заказ валиден, иначе False.
+        """
+        return len(self.errors) == 0
 
-    :param errors: Список ошибок.
-    :param file_path: Путь к выходному файлу.
-    """
-    with open(file_path, 'w', encoding='utf-8') as file:
-        for error in errors:
-            file.write(f"{error[0]};{error[1]};{error[2]}\n")
+    def format_products(self) -> str:
+        """
+        Форматирует строку с продуктами.
 
-def sort_orders(orders: List[List[str]]) -> List[List[str]]:
-    """
-    Сортирует заказы по стране и приоритету доставки.
+        :return: Отформатированная строка продуктов.
+        """
+        product_list = [p.strip() for p in self.products.split(',')]
+        product_count = {}
+        for product in product_list:
+            product_count[product] = product_count.get(product, 0) + 1
 
-    :param orders: Список валидных заказов.
-    :return: Отсортированный список заказов.
-    """
-    priority_mapping = {'MAX': 1, 'MIDDLE': 2, 'LOW': 3}
+        formatted_products = []
+        for product, count in product_count.items():
+            if count > 1:
+                formatted_products.append(f"{product} x{count}")
+            else:
+                formatted_products.append(product)
+        return ', '.join(formatted_products)
 
-    def sort_key(order: List[str]) -> Tuple[str, int]:
-        address_parts = order[3].split('. ')
-        country = address_parts[0] if address_parts else ''
-        priority = priority_mapping.get(order[5], 4)
-        return country, priority
+    def format_address(self) -> str:
+        """
+        Форматирует строку с адресом.
 
-    return sorted(orders, key=sort_key)
+        :return: Отформатированная строка адреса.
+        """
+        address_parts = self.address.split('. ')
+        return '. '.join(address_parts[1:]) if len(address_parts) > 1 else self.address
 
-def format_products(products: str) -> str:
-    """
-    Форматирует строку с продуктами.
+    def get_country(self) -> str:
+        """
+        Извлекает страну из адреса.
 
-    :param products: Исходная строка продуктов.
-    :return: Отформатированная строка продуктов.
-    """
-    product_list = [p.strip() for p in products.split(',')]
-    product_count = {}
-    for product in product_list:
-        product_count[product] = product_count.get(product, 0) + 1
+        :return: Название страны.
+        """
+        address_parts = self.address.split('. ')
+        return address_parts[0] if address_parts else ''
 
-    formatted_products = []
-    for product, count in product_count.items():
-        if count > 1:
-            formatted_products.append(f"{product} x{count}")
+    def get_priority_value(self) -> int:
+        """
+        Возвращает числовое значение приоритета для сортировки.
+
+        :return: Числовое значение приоритета.
+        """
+        priority_mapping = {'MAX': 1, 'MIDDLE': 2, 'LOW': 3}
+        return priority_mapping.get(self.priority, 4)
+
+
+class OrderProcessor:
+    def __init__(self, orders_data: Optional[List[List[str]]] = None, input_file: Optional[str] = None):
+        """
+        Инициализирует объект для обработки заказов.
+
+        :param orders_data: Список заказов, каждый из которых является списком атрибутов.
+        :param input_file: Путь к файлу с заказами.
+        """
+        self.orders: List[Order] = []
+        self.errors: List[Tuple[str, str, str]] = []
+
+        if orders_data:
+            self.orders = [Order(order_data) for order_data in orders_data]
+        elif input_file:
+            self.read_orders_from_file(input_file)
         else:
-            formatted_products.append(product)
-    return ', '.join(formatted_products)
+            raise ValueError("Необходимо предоставить либо orders_data, либо input_file")
 
-def format_address(address: str) -> str:
-    """
-    Форматирует строку с адресом.
+    def read_orders_from_file(self, input_file: str) -> None:
+        """
+        Читает заказы из файла и создает объекты Order.
 
-    :param address: Исходная строка адреса.
-    :return: Отформатированная строка адреса.
-    """
-    address_parts = address.split('. ')
-    return '. '.join(address_parts[1:])
+        :param input_file: Путь к файлу с заказами.
+        """
+        with open(input_file, 'r', encoding='utf-8') as file:
+            for line in file:
+                if line.strip():
+                    order_data = line.strip().split(';')
+                    order = Order(order_data)
+                    self.orders.append(order)
 
-def write_valid_orders(orders: List[List[str]], file_path: str) -> None:
-    """
-    Записывает валидные заказы в файл после форматирования.
+    def validate_orders(self) -> None:
+        """
+        Проверяет все заказы и собирает ошибки.
+        """
+        for order in self.orders:
+            order.validate()
+            if not order.is_valid():
+                for error_type, error_value in order.errors:
+                    self.errors.append((order.order_number, error_type, error_value))
 
-    :param orders: Список валидных заказов.
-    :param file_path: Путь к выходному файлу.
-    """
-    with open(file_path, 'w', encoding='utf-8') as file:
-        for order in orders:
-            order_number, products, customer_name, address, phone_number, priority = order
-            formatted_products = format_products(products)
-            formatted_address = format_address(address)
-            file.write(f"{order_number};{formatted_products};{customer_name};"
-                       f"{formatted_address};{phone_number};{priority}\n")
+    def write_non_valid_orders(self, file_path: str) -> None:
+        """
+        Записывает невалидные заказы в файл.
+
+        :param file_path: Путь к выходному файлу.
+        """
+        with open(file_path, 'w', encoding='utf-8') as file:
+            for error in self.errors:
+                file.write(f"{error[0]};{error[1]};{error[2]}\n")
+
+    def get_valid_orders(self) -> List[Order]:
+        """
+        Возвращает список валидных заказов.
+
+        :return: Список объектов Order.
+        """
+        return [order for order in self.orders if order.is_valid()]
+
+    def sort_orders(self, orders: List[Order]) -> List[Order]:
+        """
+        Сортирует заказы по стране и приоритету доставки.
+
+        :param orders: Список заказов для сортировки.
+        :return: Отсортированный список заказов.
+        """
+        return sorted(orders, key=lambda o: (o.get_country(), o.get_priority_value()))
+
+    def write_valid_orders(self, orders: List[Order], file_path: str) -> None:
+        """
+        Записывает валидные заказы в файл после форматирования.
+
+        :param orders: Список валидных заказов.
+        :param file_path: Путь к выходному файлу.
+        """
+        with open(file_path, 'w', encoding='utf-8') as file:
+            for order in orders:
+                formatted_products = order.format_products()
+                formatted_address = order.format_address()
+                file.write(f"{order.order_number};{formatted_products};{order.customer_name};"
+                           f"{formatted_address};{order.phone_number};{order.priority}\n")
+
+    def process(self, non_valid_orders_file: Optional[str] = None, valid_orders_file: Optional[str] = None) -> None:
+        """
+        Выполняет полный цикл обработки заказов.
+
+        :param non_valid_orders_file: Путь к файлу для записи невалидных заказов.
+        :param valid_orders_file: Путь к файлу для записи валидных заказов.
+        """
+        self.validate_orders()
+        if non_valid_orders_file:
+            self.write_non_valid_orders(non_valid_orders_file)
+        valid_orders = self.get_valid_orders()
+        sorted_orders = self.sort_orders(valid_orders)
+        if valid_orders_file:
+            self.write_valid_orders(sorted_orders, valid_orders_file)
+
 
 def main() -> None:
     """
-    Главная функция для обработки заказов.
+    Главная функция для запуска обработки заказов.
     """
-    orders = read_orders('txt_files/orders.txt')
-    valid_orders, errors = process_orders(orders)
-    write_non_valid_orders(errors, 'txt_files/non_valid_orders.txt')
-    sorted_orders = sort_orders(valid_orders)
-    write_valid_orders(sorted_orders, 'txt_files/order_country.txt')
+    processor = OrderProcessor(input_file='txt_files/orders.txt')
+    processor.process(non_valid_orders_file='txt_files/non_valid_orders.txt',
+                      valid_orders_file='txt_files/order_country.txt')
+
 
 if __name__ == "__main__":
     main()
